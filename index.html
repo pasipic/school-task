@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>김천중앙고등학교 전체 업무분장 조정 플랫폼</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #1a365d;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .top-actions {
+            text-align: center;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .top-actions button, .top-actions label {
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.95em;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-add { background: #2f855a; color: white; }
+        .btn-add:hover { background: #276749; }
+        .btn-excel { background: #2b6cb0; color: white; }
+        .btn-excel:hover { background: #2c5282; }
+        .btn-upload { background: #d69e2e; color: white; }
+        .btn-upload:hover { background: #b7791f; }
+        .btn-undo { background: #718096; color: white; }
+        .btn-undo:hover { background: #4a5568; }
+        .btn-undo:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-bottom: 40px;
+        }
+        .department-row {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .department-header {
+            background: #2b6cb0;
+            color: white;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .department-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .department-header input {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.5);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            padding: 4px 8px;
+            width: 300px;
+            border-radius: 4px;
+        }
+        .department-header input:focus {
+            background: white;
+            color: #333;
+            outline: none;
+        }
+        .del-dept-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .del-dept-btn:hover { background: #c53030; }
+        
+        .department-body {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 15px;
+            background: #f8fafc;
+            align-items: flex-start;
+        }
+
+        .staff-card {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border-left: 4px solid #3182ce;
+            width: 280px;
+            min-width: 280px;
+        }
+        .staff-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .staff-title-input {
+            width: 65%;
+            font-weight: bold;
+            font-size: 0.95em;
+            color: #2d3748;
+            border: 1px solid transparent;
+            background: #f7fafc;
+            padding: 4px;
+            border-radius: 3px;
+        }
+        .staff-title-input:hover, .staff-title-input:focus {
+            border-color: #cbd5e0;
+            background: #fff;
+            outline: none;
+        }
+        .staff-card-btns {
+            display: flex;
+            gap: 3px;
+        }
+        .move-staff-btn {
+            background: #2b6cb0;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7em;
+            padding: 2px 5px;
+        }
+        .move-staff-btn:hover { background: #2c5282; }
+        .del-staff-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7em;
+            padding: 2px 5px;
+        }
+        .del-staff-btn:hover { background: #c53030; }
+
+        .task-items-container {
+            min-height: 50px;
+            background: #fff;
+            border: 1px dashed #cbd5e0;
+            border-radius: 4px;
+            padding: 4px;
+        }
+        .task-item {
+            background: #ebf8ff;
+            border: 1px solid #bee3f8;
+            padding: 6px 8px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #2b6cb0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-item input {
+            border: none;
+            background: transparent;
+            width: 70%;
+            font-size: 0.95em;
+            color: #2b6cb0;
+            font-family: 'Malgun Gothic', sans-serif;
+        }
+        .task-item input:focus {
+            background: white;
+            outline: 1px solid #3182ce;
+            border-radius: 2px;
+        }
+        .task-btns {
+            display: flex;
+            gap: 3px;
+        }
+        .move-btn {
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75em;
+            padding: 2px 5px;
+        }
+        .move-btn:hover { background: #2b6cb0; }
+        .mini-del-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75em;
+            padding: 2px 5px;
+        }
+        .mini-del-btn:hover { background: #c53030; }
+
+        .add-task-item-btn {
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+            color: #4a5568;
+            width: 100%;
+            padding: 4px;
+            margin-top: 4px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .add-task-item-btn:hover { background: #e2e8f0; }
+        .add-staff-btn {
+            background: #4a5568;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            align-self: center;
+        }
+        .add-staff-btn:hover { background: #2d3748; }
+    </style>
+</head>
+<body>
+
+<h1>김천중앙고등학교 2026학년도 전체 업무분장 조정 플랫폼</h1>
+<p class="subtitle">엑셀 업로드를 통해 기존 데이터를 불러오거나, 웹에서 직접 수정 및 이동 작업을 진행할 수 있습니다.</p>
+
+<div class="top-actions">
+    <button class="btn-undo" id="undoBtn" onclick="undoAction()" disabled>↩ 되돌리기</button>
+    <button class="btn-add" onclick="addDepartment()">+ 새 부서 행 추가하기</button>
+    <button class="btn-excel" onclick="exportToExcel()">📊 엑셀 내보내기</button>
+    <label class="btn-upload">
+        📁 엑셀 불러오기 <input type="file" id="excelFile" accept=".xlsx, .xls" style="display:none;" onchange="importFromExcel(event)">
+    </label>
+</div>
+
+<div class="container" id="board">
+
+    <!-- 1. 교무기획부 -->
+    <div class="department-row">
+        <div class="department-header">
+            <div class="department-header-left"><input type="text" value="1. 교무기획부" onchange="saveState()"></div>
+            <button class="del-dept-btn" onclick="removeDepartment(this)">부서 삭제</button>
+        </div>
+        <div class="department-body">
+            <div class="staff-card">
+                <div class="staff-card-header">
+                    <input type="text" class="staff-title-input" value="교무기획부장" onchange="saveState()">
+                    <div class="staff-card-btns">
+                        <button class="move-staff-btn" onclick="openMoveStaffModal(this)">담당자 이동</button>
+                        <button class="del-staff-btn" onclick="removeStaffCard(this)">×</button>
+                    </div>
+                </div>
+                <div class="task-items-container">
+                    <div class="task-item"><input type="text" value="교무기획부 업무 총괄" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="신입생 OT. 입학식 및 졸업식, 방학식" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="학적업무, 진급 졸업 사정회, 전편입학업무" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="성과상여금, 학교설명회 업무 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="학교규칙 학칙제 규정, 수능 고사장 관리" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="초빙교사, 교사 다면평가, 각종 위원회" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교내대회 계획 및 지원, 학사일정 계획 및 운영" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="제반 내규 및 각종 서식 관리, 교원 복무 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="의의 및 행사 진행, 학교교육계획서 작성 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="학교평가 업무, 학생 현원 관리, 교권보호업무" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="고입업무 지원, 부서 업무 조율 총괄" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                </div>
+                <button class="add-task-item-btn" onclick="addTaskItem(this)">+ 세부업무 추가</button>
+            </div>
+            <div class="staff-card">
+                <div class="staff-card-header">
+                    <input type="text" class="staff-title-input" value="교무기획 (비담임)" onchange="saveState()">
+                    <div class="staff-card-btns">
+                        <button class="move-staff-btn" onclick="openMoveStaffModal(this)">담당자 이동</button>
+                        <button class="del-staff-btn" onclick="removeStaffCard(this)">×</button>
+                    </div>
+                </div>
+                <div class="task-items-container">
+                    <div class="task-item"><input type="text" value="학교교육계획서 작성(편집), 학교요람" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교원현황부 및 현황표, 교원조직표" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교육통계 지원, 학적업무, 교내대회 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="정년 명예퇴직, 계약직 교원 채용 업무" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교권보호업무 지원, 교원 휴복직 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="포상 업무, 타시도 교류, 학교평가 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교사 다면평가 지원, 수능업무 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교무부 각종 공문처리, 정보공시 자료 입력" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="본관 및 교장실 게시물 정리, 평학 중 교육활동" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="정자격연수, 초빙교사 업무, 문화의 날 운영" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                </div>
+                <button class="add-task-item-btn" onclick="addTaskItem(this)">+ 세부업무 추가</button>
+            </div>
+            <div class="staff-card">
+                <div class="staff-card-header">
+                    <input type="text" class="staff-title-input" value="급식 (영양)" onchange="saveState()">
+                    <div class="staff-card-btns">
+                        <button class="move-staff-btn" onclick="openMoveStaffModal(this)">담당자 이동</button>
+                        <button class="del-staff-btn" onclick="removeStaffCard(this)">×</button>
+                    </div>
+                </div>
+                <div class="task-items-container">
+                    <div class="task-item"><input type="text" value="학교 급식 계획 및 추진, 급식소 운영" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="우유급식, 식생활소식지, 기호도만족도" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교육비 지원대상자 선정 및 급식비 지원" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교직원 석식대장 관리, 급식 지도" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="근골격계조사, 학부모 급식 모니터링" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                </div>
+                <button class="add-task-item-btn" onclick="addTaskItem(this)">+ 세부업무 추가</button>
+            </div>
+            <div class="staff-card">
+                <div class="staff-card-header">
+                    <input type="text" class="staff-title-input" value="교무실무사" onchange="saveState()">
+                    <div class="staff-card-btns">
+                        <button class="move-staff-btn" onclick="openMoveStaffModal(this)">담당자 이동</button>
+                        <button class="del-staff-btn" onclick="removeStaffCard(this)">×</button>
+                    </div>
+                </div>
+                <div class="task-items-container">
+                    <div class="task-item"><input type="text" value="공문접수 및 처리, 학교일지 작성" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="학생이동부 및 학적관리(전출입, 자퇴)" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="주간 월간계획 부서별 수렴 및 정리" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="출장계획 기재, 국가유공자 자녀 사무" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="지출품의 및 물품구입, 비상키 관리" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="상장 작성 및 출력 직인 작업, 수상자 관리" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="교내상 나이스 입력, 비상연락망 관리" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="우편물 관리 및 배부, 홈페이지 관리" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                    <div class="task-item"><input type="text" value="메신저 관리, 프린터 소모품, 안내 문자 발송" onchange="saveState()"><div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div></div>
+                </div>
+                <button class="add-task-item-btn" onclick="addTaskItem(this)">+ 세부업무 추가</button>
+            </div>
+            <button class="add-staff-btn" onclick="addStaffCard(this)">+ 담당자(계원) 추가</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let undoStack = [];
+    let currentTaskItem = null;
+    let currentStaffCard = null;
+
+    function saveState() {
+        const boardHtml = document.getElementById('board').innerHTML;
+        undoStack.push(boardHtml);
+        if (undoStack.length > 30) undoStack.shift();
+        document.getElementById('undoBtn').disabled = false;
+    }
+
+    function undoAction() {
+        if (undoStack.length === 0) return;
+        const previousState = undoStack.pop();
+        document.getElementById('board').innerHTML = previousState;
+        if (undoStack.length === 0) {
+            document.getElementById('undoBtn').disabled = true;
+        }
+    }
+
+    function removeItem(btn) {
+        saveState();
+        btn.closest('.task-item').remove();
+    }
+
+    function removeStaffCard(btn) {
+        saveState();
+        btn.closest('.staff-card').remove();
+    }
+
+    function removeDepartment(btn) {
+        saveState();
+        btn.closest('.department-row').remove();
+    }
+
+    function addTaskItem(btn) {
+        saveState();
+        const container = btn.previousElementSibling;
+        const newItem = document.createElement('div');
+        newItem.className = 'task-item';
+        newItem.innerHTML = `
+            <input type="text" value="새 세부업무 내용" onchange="saveState()">
+            <div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div>
+        `;
+        container.appendChild(newItem);
+    }
+
+    function addStaffCard(btn) {
+        saveState();
+        const departmentBody = btn.closest('.department-body');
+        const newCard = document.createElement('div');
+        newCard.className = 'staff-card';
+        newCard.innerHTML = `
+            <div class="staff-card-header">
+                <input type="text" class="staff-title-input" value="새 담당/직위" onchange="saveState()">
+                <div class="staff-card-btns">
+                    <button class="move-staff-btn" onclick="openMoveStaffModal(this)">담당자 이동</button>
+                    <button class="del-staff-btn" onclick="removeStaffCard(this)">×</button>
+                </div>
+            </div>
+            <div class="task-items-container"></div>
+            <button class="add-task-item-btn" onclick="addTaskItem(this)">+ 세부업무 추가</button>
+        `;
+        departmentBody.insertBefore(newCard, btn);
+    }
+
+    function addDepartment() {
+        saveState();
+        const board = document.getElementById('board');
+        const newRow = document.createElement('div');
+        newRow.className = 'department-row';
+        newRow.innerHTML = `
+            <div class="department-header">
+                <div class="department-header-left"><input type="text" value="새 부서명" onchange="saveState()"></div>
+                <button class="del-dept-btn" onclick="removeDepartment(this)">부서 삭제</button>
+            </div>
+            <div class="department-body">
+                <button class="add-staff-btn" onclick="addStaffCard(this)">+ 담당자(계원) 추가</button>
+            </div>
+        `;
+        board.appendChild(newRow);
+    }
+
+    function openMoveModal(btn) {
+        currentTaskItem = btn.closest('.task-item');
+        let taskText = currentTaskItem.querySelector('input').value;
+
+        let oldModal = document.getElementById('moveModal');
+        if (oldModal) oldModal.remove();
+
+        let optionsHtml = '';
+        const rows = document.querySelectorAll('.department-row');
+        rows.forEach((row, rIdx) => {
+            let deptName = row.querySelector('.department-header input').value;
+            let staffCards = row.querySelectorAll('.staff-card');
+            staffCards.forEach((card, sIdx) => {
+                let staffTitle = card.querySelector('.staff-title-input').value;
+                optionsHtml += `<option value="${rIdx}_${sIdx}">[${deptName}] ${staffTitle}</option>`;
+            });
+        });
+
+        let modal = document.createElement('div');
+        modal.id = 'moveModal';
+        modal.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;";
+        modal.innerHTML = `
+            <div style="background:white; padding:20px; border-radius:8px; width:350px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                <h3>세부업무 이동</h3>
+                <p style="font-size:0.9em; color:#666;"><b>"${taskText}"</b> 항목을 보낼 곳을 선택하세요:</p>
+                <select id="targetSelect" style="width:100%; padding:8px; margin-bottom:15px; border-radius:4px; border:1px solid #ccc;">
+                    ${optionsHtml}
+                </select>
+                <div style="text-align:right;">
+                    <button onclick="executeTaskMove()" style="background:#2b6cb0; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">이동</button>
+                    <button onclick="document.getElementById('moveModal').remove()" style="background:#cbd5e0; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-left:5px;">취소</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    function executeTaskMove() {
+        saveState();
+        let val = document.getElementById('targetSelect').value;
+        let [rIdx, sIdx] = val.split('_');
+
+        let targetRow = document.querySelectorAll('.department-row')[rIdx];
+        let targetCard = targetRow.querySelectorAll('.staff-card')[sIdx];
+        let targetContainer = targetCard.querySelector('.task-items-container');
+
+        targetContainer.appendChild(currentTaskItem);
+        document.getElementById('moveModal').remove();
+    }
+
+    function openMoveStaffModal(btn) {
+        currentStaffCard = btn.closest('.staff-card');
+        let staffTitle = currentStaffCard.querySelector('.staff-title-input').value;
+
+        let oldModal = document.getElementById('moveStaffModal');
+        if (oldModal) oldModal.remove();
+
+        let optionsHtml = '';
+        const rows = document.querySelectorAll('.department-row');
+        rows.forEach((row, rIdx) => {
+            let deptName = row.querySelector('.department-header input').value;
+            optionsHtml += `<option value="${rIdx}">[부서] ${deptName}</option>`;
+        });
+
+        let modal = document.createElement('div');
+        modal.id = 'moveStaffModal';
+        modal.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;";
+        modal.innerHTML = `
+            <div style="background:white; padding:20px; border-radius:8px; width:350px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                <h3>부서원(담당자) 이동</h3>
+                <p style="font-size:0.9em; color:#666;"><b>"${staffTitle}"</b> 담당자를 통째로 보낼 부서를 선택하세요:</p>
+                <select id="targetDeptSelect" style="width:100%; padding:8px; margin-bottom:15px; border-radius:4px; border:1px solid #ccc;">
+                    ${optionsHtml}
+                </select>
+                <div style="text-align:right;">
+                    <button onclick="executeStaffMove()" style="background:#2b6cb0; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">이동</button>
+                    <button onclick="document.getElementById('moveStaffModal').remove()" style="background:#cbd5e0; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; margin-left:5px;">취소</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    function executeStaffMove() {
+        saveState();
+        let rIdx = document.getElementById('targetDeptSelect').value;
+        let targetRow = document.querySelectorAll('.department-row')[rIdx];
+        let targetBody = targetRow.querySelector('.department-body');
+        let addStaffBtn = targetBody.querySelector('.add-staff-btn');
+
+        targetBody.insertBefore(currentStaffCard, addStaffBtn);
+        document.getElementById('moveStaffModal').remove();
+    }
+
+    function exportToExcel() {
+        let excelData = [];
+        const rows = document.querySelectorAll('.department-row');
+        rows.forEach(row => {
+            let deptName = row.querySelector('.department-header input').value;
+            let staffCards = row.querySelectorAll('.staff-card');
+
+            staffCards.forEach(card => {
+                let staffTitle = card.querySelector('.staff-title-input').value;
+                let taskInputs = card.querySelectorAll('.task-item input');
+
+                taskInputs.forEach(taskInput => {
+                    excelData.push({
+                        "부서명": deptName,
+                        "담당자/직위": staffTitle,
+                        "세부 업무 내용": taskInput.value
+                    });
+                });
+            });
+        });
+
+        if (excelData.length === 0) {
+            alert("내보낼 업무 데이터가 없습니다.");
+            return;
+        }
+
+        let worksheet = XLSX.utils.json_to_sheet(excelData);
+        let workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "업무분장조정안");
+        XLSX.writeFile(workbook, "김천중앙고_업무분장조정안.xlsx");
+    }
+
+    // 엑셀 파일 업로드(불러오기) 기능
+    function importFromExcel(event) {
+        let file = event.target.files[0];
+        if (!file) return;
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let data = new Uint8Array(e.target.result);
+            let workbook = XLSX.read(data, {type: 'array'});
+            let firstSheetName = workbook.SheetNames[0];
+            let worksheet = workbook.Sheets[firstSheetName];
+            let json = XLSX.utils.sheet_to_json(worksheet);
+
+            if (json.length === 0) {
+                alert("엑셀 파일에 데이터가 없습니다.");
+                return;
+            }
+
+            saveState();
+
+            // 데이터 구조화 (부서명 -> 담당자 -> 세부업무 배열)
+            let deptMap = {};
+            json.forEach(row => {
+                let deptName = row["부서명"] || "기타부서";
+                let staffTitle = row["담당자/직위"] || "담당자미정";
+                let taskText = row["세부 업무 내용"] || "";
+
+                if (!deptMap[deptName]) deptMap[deptName] = {};
+                if (!deptMap[deptName][staffTitle]) deptMap[deptName][staffTitle] = [];
+                if (taskText) deptMap[deptName][staffTitle].push(taskText);
+            });
+
+            // HTML 보드 재생성
+            let board = document.getElementById('board');
+            board.innerHTML = "";
+
+            Object.keys(deptMap).forEach(deptName => {
+                let newRow = document.createElement('div');
+                newRow.className = 'department-row';
+                
+                let staffCardsHtml = '';
+                Object.keys(deptMap[deptName]).forEach(staffTitle => {
+                    let tasksHtml = '';
+                    deptMap[deptName][staffTitle].forEach(taskText => {
+                        tasksHtml += `
+                            <div class="task-item">
+                                <input type="text" value="${taskText}" onchange="saveState()">
+                                <div class="task-btns"><button class="move-btn" onclick="openMoveModal(this)">이동</button><button class="mini-del-btn" onclick="removeItem(this)">×</button></div>
+                            </div>
+                        `;
+                    });
+
+                    staffCardsHtml += `
+                        <div class="staff-card">
+                            <div class="staff-card-header">
+                                <input type="text" class="staff-title-input" value="${staffTitle}" onchange="saveState()">
+                                <div class="staff-card-btns">
+                                    <button class="move-staff-btn" onclick="openMoveStaffModal(this)">담당자 이동</button>
+                                    <button class="del-staff-btn" onclick="removeStaffCard(this)">×</button>
+                                </div>
+                            </div>
+                            <div class="task-items-container">${tasksHtml}</div>
+                            <button class="add-task-item-btn" onclick="addTaskItem(this)">+ 세부업무 추가</button>
+                        </div>
+                    `;
+                });
+
+                newRow.innerHTML = `
+                    <div class="department-header">
+                        <div class="department-header-left"><input type="text" value="${deptName}" onchange="saveState()"></div>
+                        <button class="del-dept-btn" onclick="removeDepartment(this)">부서 삭제</button>
+                    </div>
+                    <div class="department-body">
+                        ${staffCardsHtml}
+                        <button class="add-staff-btn" onclick="addStaffCard(this)">+ 담당자(계원) 추가</button>
+                    </div>
+                `;
+                board.appendChild(newRow);
+            });
+
+            alert("엑셀 파일을 성공적으로 불러왔습니다!");
+            event.target.value = ""; // 파일 초기화
+        };
+        reader.readAsArrayBuffer(file);
+    }
+</script>
+
+</body>
+</html>
